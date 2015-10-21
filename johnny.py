@@ -1,20 +1,25 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"%s <target_file> <max_password_length> <output_file>"
+"%s <target_file> <max_password_length> <output_file> [type]"
+# See /usr/share/mime/types to get a list of all valid types.
 
 import sys
 import os
 import os.path
 from passwordspace import PasswordSpace
 import gnupg
+import magic
 
 def main():
-    if len(sys.argv) != 4:
+    if len(sys.argv) < 4:
         print __doc__ % sys.argv[0]
         sys.exit(1)
 
-    targetFileName, maxPasswordLength, outputFileName = sys.argv[1:]
+    targetFileName = sys.argv[1]
+    maxPasswordLength = sys.argv[2]
+    outputFileName = sys.argv[3]
+    outputFileType = None if len(sys.argv) != 5 else sys.argv[4]
 
     if not os.path.isfile(targetFileName):
         print 'Error: {0} not found'.format(targetFileName)
@@ -29,12 +34,12 @@ def main():
         sys.exit(1)
 
     try:
-        crack(targetFileName, int(maxPasswordLength), outputFileName)
+        crack(targetFileName, int(maxPasswordLength), outputFileName, outputFileType)
     except KeyboardInterrupt:
         print 'Process aborted by user'
 
 
-def crack(targetFileName, maxPasswordLength, outputFileName):
+def crack(targetFileName, maxPasswordLength, outputFileName, outputFileType):
     lowerCase = [chr(ascii) for ascii in range(ord('a'), ord('z') + 1)]
     upperCase = [chr(ascii) for ascii in range(ord('A'), ord('Z') + 1)]
     numbers = [chr(ascii) for ascii in range(ord('0'), ord('9') + 1)]
@@ -51,6 +56,9 @@ def crack(targetFileName, maxPasswordLength, outputFileName):
                 result = gpg.decrypt_file(targetFile, passphrase = password, output = outputFileName)
 
             if result.ok:
+                if not os.path.isfile(outputFileName) or (not outputFileType is None and magic.from_file(outputFileName, mime = True) != outputFileType):
+                    continue
+
                 print 'Password Found: {0}\nAttempts: {1}'.format(password, tested)
                 sys.exit(0)
 
