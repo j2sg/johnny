@@ -32,7 +32,7 @@ class PasswordSpace:
             result = self.alphabet[password % alphabetLength] + result
             password /= alphabetLength
 
-        return self.alphabet[password] + result
+        return (self.alphabet[password] + result).rjust(self.length, self.alphabet[0])
 
 
     def __str__(self):
