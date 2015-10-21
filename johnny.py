@@ -4,8 +4,10 @@
 "%s <target_file> <max_password_length> <output_file>"
 
 import sys
+import os
 import os.path
 from passwordspace import PasswordSpace
+import gnupg
 
 def main():
     if len(sys.argv) != 4:
@@ -36,14 +38,26 @@ def crack(targetFileName, maxPasswordLength, outputFileName):
     lowerCase = [chr(ascii) for ascii in range(ord('a'), ord('z') + 1)]
     upperCase = [chr(ascii) for ascii in range(ord('A'), ord('Z') + 1)]
     numbers = [chr(ascii) for ascii in range(ord('0'), ord('9') + 1)]
+    alphabet = lowerCase + upperCase + numbers
+
+    gpg = gnupg.GPG()
+
+    tested = 0
 
     for passwordLength in range(1, maxPasswordLength + 1):
-        passwordSpace = PasswordSpace(lowerCase + upperCase + numbers, passwordLength)
+        print 'Generating passwords of {0} characters ...'.format(passwordLength)
+        for password in PasswordSpace(alphabet, passwordLength):
+            with open(targetFileName, 'rb') as targetFile:
+                result = gpg.decrypt_file(targetFile, passphrase = password, output = outputFileName)
 
-        print passwordSpace
+            if result.ok:
+                print 'Password Found: {0}\nAttempts: {1}'.format(password, tested)
+                sys.exit(0)
 
-        for password in passwordSpace:
-            pass
+            tested += 1
+
+    print 'Password not Found after {0} attempts\nYou must increase maximum password length'.format(tested)
+
 
 if __name__ == '__main__':
     main()
