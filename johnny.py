@@ -5,6 +5,7 @@
 
 import sys
 import os.path
+from passwordspace import PasswordSpace
 
 def main():
     if len(sys.argv) != 4:
@@ -26,14 +27,23 @@ def main():
         sys.exit(1)
 
     try:
-        crack(targetFileName, maxPasswordLength, outputFileName)
+        crack(targetFileName, int(maxPasswordLength), outputFileName)
     except KeyboardInterrupt:
         print 'Process aborted by user'
 
 
 def crack(targetFileName, maxPasswordLength, outputFileName):
-    pass
+    lowerCase = [chr(ascii) for ascii in range(ord('a'), ord('z') + 1)]
+    upperCase = [chr(ascii) for ascii in range(ord('A'), ord('Z') + 1)]
+    numbers = [chr(ascii) for ascii in range(ord('0'), ord('9') + 1)]
 
+    for passwordLength in range(1, maxPasswordLength + 1):
+        passwordSpace = PasswordSpace(lowerCase + upperCase + numbers, passwordLength)
+
+        print passwordSpace
+
+        for password in passwordSpace:
+            pass
 
 if __name__ == '__main__':
     main()
