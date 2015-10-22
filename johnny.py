@@ -48,12 +48,19 @@ def main():
         print 'Process aborted by user'
 
 
+fileData = None
+
 def crack(targetFileName, maxPasswordLength, outputFileName, outputFileType):
     lowerCase = [chr(ascii) for ascii in range(ord('a'), ord('z') + 1)]
     upperCase = [chr(ascii) for ascii in range(ord('A'), ord('Z') + 1)]
     numbers = [chr(ascii) for ascii in range(ord('0'), ord('9') + 1)]
     password = None
     totalTested = 0
+
+    global fileData
+
+    with open(targetFileName, 'rb') as targetFile:
+        fileData = targetFile.read()
 
     for passwordLength in range(1, maxPasswordLength + 1):
         password, tested = evalPasswordSpace(PasswordSpace(lowerCase + upperCase + numbers, passwordLength), targetFileName, outputFileName, outputFileType)
@@ -70,8 +77,7 @@ def evalPasswordSpace(passwordSpace, targetFileName, outputFileName, outputFileT
     tested = 0
 
     for password in passwordSpace:
-        with open(targetFileName, 'rb') as targetFile:
-            result = gpg.decrypt_file(targetFile, passphrase = password, output = outputFileName)
+        result = gpg.decrypt(fileData, passphrase = password, output = outputFileName)
 
         if result.ok:
             if not os.path.isfile(outputFileName) or (not outputFileType is None and magic.from_file(outputFileName, mime = True) != outputFileType):
