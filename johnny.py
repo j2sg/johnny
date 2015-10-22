@@ -5,11 +5,11 @@
 # See /usr/share/mime/types to get a list of all valid types.
 
 import sys
-import os
 import os.path
 from passwordspace import PasswordSpace
 import gnupg
 import magic
+import time
 
 def main():
     if len(sys.argv) < 4:
@@ -34,7 +34,16 @@ def main():
         sys.exit(1)
 
     try:
-        crack(targetFileName, int(maxPasswordLength), outputFileName, outputFileType)
+        start = time.time()
+
+        password, tested = crack(targetFileName, int(maxPasswordLength), outputFileName, outputFileType)
+
+        end = time.time()
+
+        if not password is None:
+            print 'Password {0} found after {1} attempts for {2} seconds'.format(password, tested, round(end - start, 3))
+        else:
+            print 'Password not found after {0} attempts for {1} seconds'.format(tested, round(end - start, 3))
     except KeyboardInterrupt:
         print 'Process aborted by user'
 
@@ -43,28 +52,36 @@ def crack(targetFileName, maxPasswordLength, outputFileName, outputFileType):
     lowerCase = [chr(ascii) for ascii in range(ord('a'), ord('z') + 1)]
     upperCase = [chr(ascii) for ascii in range(ord('A'), ord('Z') + 1)]
     numbers = [chr(ascii) for ascii in range(ord('0'), ord('9') + 1)]
-    alphabet = lowerCase + upperCase + numbers
-
-    gpg = gnupg.GPG()
-
-    tested = 0
+    password = None
+    totalTested = 0
 
     for passwordLength in range(1, maxPasswordLength + 1):
-        print 'Generating passwords of {0} characters ...'.format(passwordLength)
-        for password in PasswordSpace(alphabet, passwordLength):
-            with open(targetFileName, 'rb') as targetFile:
-                result = gpg.decrypt_file(targetFile, passphrase = password, output = outputFileName)
+        password, tested = evalPasswordSpace(PasswordSpace(lowerCase + upperCase + numbers, passwordLength), targetFileName, outputFileName, outputFileType)
+        totalTested += tested
 
-            if result.ok:
-                if not os.path.isfile(outputFileName) or (not outputFileType is None and magic.from_file(outputFileName, mime = True) != outputFileType):
-                    continue
+        if not password is None:
+            break
 
-                print 'Password Found: {0}\nAttempts: {1}'.format(password, tested)
-                sys.exit(0)
+    return (password, totalTested)
 
-            tested += 1
 
-    print 'Password not Found after {0} attempts\nYou must increase maximum password length'.format(tested)
+def evalPasswordSpace(passwordSpace, targetFileName, outputFileName, outputFileType):
+    gpg = gnupg.GPG()
+    tested = 0
+
+    for password in passwordSpace:
+        with open(targetFileName, 'rb') as targetFile:
+            result = gpg.decrypt_file(targetFile, passphrase = password, output = outputFileName)
+
+        if result.ok:
+            if not os.path.isfile(outputFileName) or (not outputFileType is None and magic.from_file(outputFileName, mime = True) != outputFileType):
+                continue
+
+            return (password, tested)
+
+        tested += 1
+
+    return (None, tested)
 
 
 if __name__ == '__main__':
