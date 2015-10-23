@@ -13,6 +13,8 @@ import magic
 import time
 import multiprocessing
 
+maxChunkSize = 10000
+
 def main():
     if len(sys.argv) < 4:
         print __doc__ % sys.argv[0]
@@ -74,7 +76,17 @@ def crackMP(targetFileName, maxPasswordLength, outputFileName, outputFileType):
     with open(targetFileName, 'rb') as targetFile:
         encryptedData = targetFile.read()
 
-    tasks = [pool.apply_async(evalPasswordSpace, args=(PasswordSpace(lowerCase + upperCase + numbers, passwordLength), encryptedData, outputFileName, outputFileType,)) for passwordLength in range(1, maxPasswordLength + 1)]
+    passwordSpaces = []
+
+    for passwordLength in range(1, maxPasswordLength + 1):
+        passwordSpace = PasswordSpace(lowerCase + upperCase + numbers, passwordLength)
+
+        if passwordSpace.maxPassword <= maxChunkSize:
+            passwordSpaces.append(passwordSpace)
+        else:
+            passwordSpaces.extend(passwordSpace.split(maxChunkSize))
+
+    tasks = [pool.apply_async(evalPasswordSpace, args=(passwordSpace, encryptedData, outputFileName, outputFileType,)) for passwordSpace in passwordSpaces]
 
     found = False
     finished = [False for t in range(len(tasks))]
@@ -107,7 +119,11 @@ def evalPasswordSpace(passwordSpace, encryptedData, outputFileName, outputFileTy
     gpg = gnupg.GPG()
     tested = 0
 
-    print 'Process {0} is cracking {1}-character passwords [{2}]'.format(os.getpid(), passwordSpace.length, passwordSpace.maxPassword)
+    print 'Process {0} is cracking {1}-character passwords [size: {2} interval: ({3}, {4})]'.format(os.getpid(),
+                                                                                                    passwordSpace.length,
+                                                                                                    passwordSpace.maxPassword - passwordSpace.currentPassword,
+                                                                                                    passwordSpace.alphaPassword(passwordSpace.currentPassword),
+                                                                                                    passwordSpace.alphaPassword(passwordSpace.maxPassword - 1))
 
     for password in passwordSpace:
         result = gpg.decrypt(encryptedData, passphrase = password, output = outputFileName)
