@@ -35,5 +35,23 @@ class PasswordSpace:
         return (self.alphabet[password] + result).rjust(self.length, self.alphabet[0])
 
 
+    def split(self, chunkSize):
+        if chunkSize <= 0:
+            return None
+
+        nchunks = int(math.ceil((self.maxPassword - self.currentPassword) / float(chunkSize)))
+        chunks = []
+
+        for chunk in range(nchunks):
+            subPasswordSpace = PasswordSpace(self.alphabet, self.length)
+
+            subPasswordSpace.currentPassword = chunk * chunkSize
+            subPasswordSpace.maxPassword = subPasswordSpace.currentPassword + (chunkSize if chunk != (nchunks - 1) else (self.maxPassword - self.currentPassword) % chunkSize)
+
+            chunks.append(subPasswordSpace)
+
+        return chunks
+
+
     def __str__(self):
         return 'Length: {0} characters\nSize: {1} passwords\nAlphabet: {2} characters {3}\n'.format(self.length, self.maxPassword, len(self.alphabet), self.alphabet)
