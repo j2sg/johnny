@@ -18,15 +18,15 @@ class PasswordSpace:
         if self.currentPassword == self.maxPassword:
             raise StopIteration
         else:
-            result = self.alphaPassword()
+            result = self.alphaPassword(self.currentPassword)
             self.currentPassword += 1
             return result
 
 
-    def alphaPassword(self):
+    def alphaPassword(self, numeric):
         result = ''
         alphabetLength = len(self.alphabet)
-        password = self.currentPassword
+        password = numeric
 
         while password / alphabetLength >= 1:
             result = self.alphabet[password % alphabetLength] + result
