@@ -16,6 +16,9 @@ import multiprocessing
 maxChunkSize = 10000
 
 def main():
+    reload(sys)
+    sys.setdefaultencoding('utf-8')
+
     if len(sys.argv) < 4:
         print __doc__ % sys.argv[0]
         sys.exit(1)
