@@ -40,6 +40,16 @@ def main():
         print __doc__ % sys.argv[0]
         sys.exit(1)
 
+    if os.path.isfile(outputFileName):
+        while True:
+            response = raw_input('{0} already exists. do you want to replace it? [y/n]'.format(outputFileName))
+            if response in ['y', 'Y', 'n', 'N']:
+                break
+        if response.lower() != 'y':
+            sys.exit(0)
+        else:
+            os.remove(outputFileName)
+
     start = time.time()
     password, tested = crackMP(targetFileName, int(maxPasswordLength), outputFileName, outputFileType)
     end = time.time()
