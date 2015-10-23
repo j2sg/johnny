@@ -5,11 +5,13 @@
 # See /usr/share/mime/types to get a list of all valid types.
 
 import sys
+import os
 import os.path
 from passwordspace import PasswordSpace
 import gnupg
 import magic
 import time
+import multiprocessing
 
 def main():
     if len(sys.argv) < 4:
@@ -33,22 +35,12 @@ def main():
         print __doc__ % sys.argv[0]
         sys.exit(1)
 
-    try:
-        start = time.time()
+    start = time.time()
+    password, tested = crackMP(targetFileName, int(maxPasswordLength), outputFileName, outputFileType)
+    end = time.time()
 
-        password, tested = crack(targetFileName, int(maxPasswordLength), outputFileName, outputFileType)
+    print 'Password {0} after {1} seconds and {2} attempts'.format('not found' if password is None else '{0} found'.format(password), round(end - start, 3), tested)
 
-        end = time.time()
-
-        if not password is None:
-            print 'Password {0} found after {1} attempts for {2} seconds'.format(password, tested, round(end - start, 3))
-        else:
-            print 'Password not found after {0} attempts for {1} seconds'.format(tested, round(end - start, 3))
-    except KeyboardInterrupt:
-        print 'Process aborted by user'
-
-
-fileData = None
 
 def crack(targetFileName, maxPasswordLength, outputFileName, outputFileType):
     lowerCase = [chr(ascii) for ascii in range(ord('a'), ord('z') + 1)]
@@ -57,13 +49,11 @@ def crack(targetFileName, maxPasswordLength, outputFileName, outputFileType):
     password = None
     totalTested = 0
 
-    global fileData
-
     with open(targetFileName, 'rb') as targetFile:
-        fileData = targetFile.read()
+        encryptedData = targetFile.read()
 
     for passwordLength in range(1, maxPasswordLength + 1):
-        password, tested = evalPasswordSpace(PasswordSpace(lowerCase + upperCase + numbers, passwordLength), targetFileName, outputFileName, outputFileType)
+        password, tested = evalPasswordSpace(PasswordSpace(lowerCase + upperCase + numbers, passwordLength), encryptedData, outputFileName, outputFileType)
         totalTested += tested
 
         if not password is None:
@@ -72,12 +62,55 @@ def crack(targetFileName, maxPasswordLength, outputFileName, outputFileType):
     return (password, totalTested)
 
 
-def evalPasswordSpace(passwordSpace, targetFileName, outputFileName, outputFileType):
+def crackMP(targetFileName, maxPasswordLength, outputFileName, outputFileType):
+    lowerCase = [chr(ascii) for ascii in range(ord('a'), ord('z') + 1)]
+    upperCase = [chr(ascii) for ascii in range(ord('A'), ord('Z') + 1)]
+    numbers = [chr(ascii) for ascii in range(ord('0'), ord('9') + 1)]
+    password = None
+    totalTested = 0
+
+    pool = multiprocessing.Pool(multiprocessing.cpu_count())
+
+    with open(targetFileName, 'rb') as targetFile:
+        encryptedData = targetFile.read()
+
+    tasks = [pool.apply_async(evalPasswordSpace, args=(PasswordSpace(lowerCase + upperCase + numbers, passwordLength), encryptedData, outputFileName, outputFileType,)) for passwordLength in range(1, maxPasswordLength + 1)]
+
+    found = False
+    finished = [False for t in range(len(tasks))]
+
+    while not found:
+        for k in range(len(tasks)):
+            tasks[k].wait(timeout = 0.2)
+            if tasks[k].ready():
+                result = tasks[k].get()
+                finished[k] = True
+
+                if not result is None:
+                    password, tested = result
+                    totalTested += tested
+
+                    if not password is None:
+                        found = True
+
+            if found:
+                pool.terminate()
+                break
+
+        if reduce(lambda x, y: x and y, finished):
+            break
+
+    return (password, totalTested)
+
+
+def evalPasswordSpace(passwordSpace, encryptedData, outputFileName, outputFileType):
     gpg = gnupg.GPG()
     tested = 0
 
+    print 'Process {0} is cracking {1}-character passwords [{2}]'.format(os.getpid(), passwordSpace.length, passwordSpace.maxPassword)
+
     for password in passwordSpace:
-        result = gpg.decrypt(fileData, passphrase = password, output = outputFileName)
+        result = gpg.decrypt(encryptedData, passphrase = password, output = outputFileName)
 
         if result.ok:
             if not os.path.isfile(outputFileName) or (not outputFileType is None and magic.from_file(outputFileName, mime = True) != outputFileType):
