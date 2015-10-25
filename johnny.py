@@ -1,6 +1,25 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+#
+#  This file is part of Johnny.
+#
+#  Copyright (c) 2015 Juan Jose Salazar Garcia jjslzgc@gmail.com
+#
+#  Johnny is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  Johnny is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with Johnny.  If not, see <http://www.gnu.org/licenses/>.
+#
+
 "%s <target_file> <max_password_length> <output_file> [type]"
 # See /usr/share/mime/types to get a list of all valid types.
 
