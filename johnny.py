@@ -14,6 +14,8 @@ import time
 import datetime
 import multiprocessing
 
+APPLICATION_NAME = 'Johnny the Cracker'
+APPLICATION_VERSION = '0.1.0'
 maxChunkSize = 10000
 
 def main():
@@ -41,11 +43,17 @@ def main():
         print __doc__ % sys.argv[0]
         sys.exit(1)
 
+    print '\n{0} {1}'.format(APPLICATION_NAME, APPLICATION_VERSION)
+    print 'Target file: {0}'.format(targetFileName)
+    print 'Maximum password length: {0}'.format(maxPasswordLength)
+    print 'Output file: {0}\n'.format(outputFileName)
+
     if os.path.isfile(outputFileName):
         while True:
             response = raw_input('{0} already exists. do you want to replace it? [y/n]'.format(outputFileName))
             if response in ['y', 'Y', 'n', 'N']:
                 break
+
         if response.lower() != 'y':
             sys.exit(0)
         else:
@@ -55,7 +63,7 @@ def main():
     password, tested = crackMP(targetFileName, int(maxPasswordLength), outputFileName, outputFileType)
     end = time.time()
 
-    print 'Password found: {0}'.format(password) if not password is None else 'No password found for {0}-character maximum length'.format(maxPasswordLength)
+    print '\nPassword found: {0}'.format(password) if not password is None else '\nNo password found for {0}-character maximum length'.format(maxPasswordLength)
     print 'Attempts: {0}'.format(tested)
     print 'Elapsed time: {:0>8}'.format(datetime.timedelta(seconds = int(end - start)))
 
@@ -87,10 +95,16 @@ def crackMP(targetFileName, maxPasswordLength, outputFileName, outputFileType):
     password = None
     totalTested = 0
 
+    print '\nCreating {0} worker processes ...'.format(multiprocessing.cpu_count())
+
     pool = multiprocessing.Pool(multiprocessing.cpu_count())
+
+    print 'Loading {0} into memory ...'.format(targetFileName)
 
     with open(targetFileName, 'rb') as targetFile:
         encryptedData = targetFile.read()
+
+    print 'Creating password spaces ...'
 
     passwordSpaces = []
 
@@ -101,6 +115,8 @@ def crackMP(targetFileName, maxPasswordLength, outputFileName, outputFileType):
             passwordSpaces.append(passwordSpace)
         else:
             passwordSpaces.extend(passwordSpace.split(maxChunkSize))
+
+    print 'Starting password cracking ...\n'
 
     tasks = [pool.apply_async(evalPasswordSpace, args=(passwordSpace, encryptedData, outputFileName, outputFileType,)) for passwordSpace in passwordSpaces]
 
