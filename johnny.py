@@ -11,6 +11,7 @@ from passwordspace import PasswordSpace
 import gnupg
 import magic
 import time
+import datetime
 import multiprocessing
 
 maxChunkSize = 10000
@@ -54,7 +55,9 @@ def main():
     password, tested = crackMP(targetFileName, int(maxPasswordLength), outputFileName, outputFileType)
     end = time.time()
 
-    print 'Password {0} after {1} seconds and {2} attempts'.format('not found' if password is None else '{0} found'.format(password), round(end - start, 3), tested)
+    print 'Password found: {0}'.format(password) if not password is None else 'No password found for {0}-character maximum length'.format(maxPasswordLength)
+    print 'Attempts: {0}'.format(tested)
+    print 'Elapsed time: {:0>8}'.format(datetime.timedelta(seconds = int(end - start)))
 
 
 def crack(targetFileName, maxPasswordLength, outputFileName, outputFileType):
@@ -141,13 +144,13 @@ def evalPasswordSpace(passwordSpace, encryptedData, outputFileName, outputFileTy
     for password in passwordSpace:
         result = gpg.decrypt(encryptedData, passphrase = password, output = outputFileName)
 
+        tested += 1
+
         if result.ok:
             if not os.path.isfile(outputFileName) or (not outputFileType is None and magic.from_file(outputFileName, mime = True) != outputFileType):
                 continue
 
             return (password, tested)
-
-        tested += 1
 
     return (None, tested)
 
