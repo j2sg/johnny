@@ -87,12 +87,13 @@ def main():
     print 'Elapsed time: {:0>8}'.format(datetime.timedelta(seconds = int(end - start)))
 
 
-def crackMP(targetFileName, maxPasswordLength, outputFileName, outputFileType):
-    lowerCase = [chr(ascii) for ascii in range(ord('a'), ord('z') + 1)]
-    upperCase = [chr(ascii) for ascii in range(ord('A'), ord('Z') + 1)]
-    numbers = [chr(ascii) for ascii in range(ord('0'), ord('9') + 1)]
+def crackMP(targetFileName, maxPasswordLength, outputFileName, outputFileType, uppercase = False):
+    alphabet = [chr(ascii) for ascii in range(ord('0'), ord('9') + 1)] + [chr(ascii) for ascii in range(ord('a'), ord('z') + 1)]
     password = None
     totalTested = 0
+
+    if uppercase:
+        alphabet.extend([chr(ascii) for ascii in range(ord('A'), ord('Z') + 1)])
 
     print '\nCreating {0} worker processes ...'.format(multiprocessing.cpu_count())
 
@@ -108,7 +109,7 @@ def crackMP(targetFileName, maxPasswordLength, outputFileName, outputFileType):
     passwordSpaces = []
 
     for passwordLength in range(1, maxPasswordLength + 1):
-        passwordSpace = PasswordSpace(lowerCase + upperCase + numbers, passwordLength)
+        passwordSpace = PasswordSpace(alphabet, passwordLength)
 
         if passwordSpace.maxPassword <= maxChunkSize:
             passwordSpaces.append(passwordSpace)
