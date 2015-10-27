@@ -6,8 +6,7 @@ A simple password cracker
 Usage
 -----
 
-```./johnny <TargetFile> <MaxPasswordLength> <OutputFile> [Type]
-```
+$ johnny <TargetFile> <MaxPasswordLength> <OutputFile> [Type]
 
 Requeriments
 ------------
