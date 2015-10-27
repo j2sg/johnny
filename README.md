@@ -6,7 +6,8 @@ A simple password cracker
 Usage
 -----
 
-./johnny <target_file> <max_password_length> <output_file> [type]
+```./johnny <target_file> <max_password_length> <output_file> [type]
+```
 
 Requeriments
 ------------
@@ -17,7 +18,7 @@ Requeriments
 Example
 -------
 
-./johnny.py tests/secret.xyz.txt.gpg 4 secret.txt text/plain
+```./johnny.py tests/secret.xyz.txt.gpg 4 secret.txt text/plain
 
 Johnny the Cracker 0.1.0
 Target file: tests/secret.xyz.txt.gpg
@@ -45,6 +46,7 @@ Process 16712 is cracking 4-character passwords [PS: size=10000 interval=(0n5c, 
 Password found: xyz
 Attempts: 45360
 Elapsed time: 00:01:02
+```
 
 License
 -------
