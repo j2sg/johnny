@@ -19,7 +19,8 @@ Requeriments
 Example
 -------
 
-```./johnny.py tests/secret.xyz.txt.gpg 4 secret.txt text/plain
+```bash
+./johnny.py tests/secret.xyz.txt.gpg 4 secret.txt text/plain
 
 Johnny the Cracker 0.1.0
 Target file: tests/secret.xyz.txt.gpg
